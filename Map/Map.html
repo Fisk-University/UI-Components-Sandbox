@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Map</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat&display=swap" rel="stylesheet">
+    <style>
+
+        @font-face {
+            font-family: "SortsMillGoudy";
+            src: url("assets/fonts/Sorts_Mill_Goudy/SortsMillGoudy-Regular.ttf");
+            font-style: normal;
+        }
+
+        @font-face {
+            font-family: "SortsMillGoudy";
+            src: url("assets/fonts/Sorts_Mill_Goudy/SortsMillGoudy-Italic.ttf");
+            font-style: italic;
+        }
+
+        * {
+            font-family: "Montserrat", sans-serif;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Georgia, serif;
+            background-color: #f8f5f1;
+            color: #3c2415;
+        }
+
+        .map-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .map-container h1 {
+            font-family: "SortsMillGoudy";
+        }
+
+        header {
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 36px;
+            color: #3c2415;
+            border-bottom: 1px solid #d0c8b5;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        p {
+            font-size: 18px;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+
+        #map-container {
+            position: relative;
+            height: 500px;
+            border: 1px solid #d0c8b5;
+            margin-bottom: 20px;
+        }
+
+        #map {
+            height: 100%;
+        }
+
+        .map-help {
+            margin-top: 10px;
+            color: #795548;
+            cursor: pointer;
+            display: inline-block;
+        }
+
+        .map-help i {
+            display: inline-flex;
+            width: 20px;
+            height: 20px;
+            background-color: #795548;
+            color: white;
+            border-radius: 50%;
+            justify-content: center;
+            align-items: center;
+            font-style: normal;
+            font-size: 14px;
+            margin-right: 8px;
+        }
+
+        /* Popup styles */
+
+        /* TODO: Report the issue of popup not being able to extend outside the map container */
+        .popup-container {
+            width: 150px;
+            height: 200px;
+        }
+
+        .popup-header h2 {
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .popup-header p {
+            font-size: 9px;
+            font-weight: bold;
+        }
+
+        .popup-body a {
+            font-size: 9px;
+            font-weight: bold;
+        }
+
+        .popup-body img {
+            height: 100%;
+            width: 100%;
+        }
+
+        .leaflet-popup-content {
+            height: 200px;
+            width: 150px;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-content {
+            position: relative;
+            background-color: #fefefe;
+            margin: 10% auto;
+            padding: 0;
+            width: 70%;
+            max-width: 600px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            animation: modalopen 0.4s;
+        }
+        
+
+        @keyframes modalopen {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid #e9e9e9;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            color: #3c2415;
+            font-size: 24px;
+        }
+
+        .modal-header p {
+            margin: 10px 0 0;
+            font-size: 16px;
+            color: #666;
+        }
+
+        .close-button {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            font-size: 28px;
+            font-weight: bold;
+            color: #aaa;
+            cursor: pointer;
+        }
+
+        .close-button:hover {
+            color: #333;
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .view-school {
+            display: inline-block;
+            color: #8b4513;
+            text-decoration: none;
+            font-size: 18px;
+            margin-top: 10px;
+        }
+
+        .view-school:after {
+            content: '→';
+            margin-left: 5px;
+        }
+
+        /* Help Modal */
+        #help-modal .modal-content {
+            max-width: 500px;
+        }
+
+        #help-modal .modal-body {
+            padding: 20px;
+        }
+
+        /* Marker Clusters */
+        .marker-cluster {
+            background-color: rgba(241, 211, 87, 0.6);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+            font-weight: bold;
+        }
+
+        .marker-cluster-small {
+            background-color: rgba(181, 226, 140, 0.6);
+        }
+
+        .marker-cluster-medium {
+            background-color: rgba(241, 211, 87, 0.6);
+        }
+
+        .marker-cluster-large {
+            background-color: rgba(253, 156, 115, 0.6);
+        }
+
+        .marker-cluster div {
+            width: 32px;
+            height: 32px;
+            text-align: center;
+            border-radius: 16px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #333;
+            font-weight: bold;
+        }
+
+        .marker-cluster-small div {
+            background-color: rgba(181, 226, 140, 0.8);
+        }
+
+        .marker-cluster-medium div {
+            background-color: rgba(241, 211, 87, 0.8);
+        }
+
+        .marker-cluster-large div {
+            background-color: rgba(253, 156, 115, 0.8);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="map-container">
+
+        <h1>ROSENWALD SCHOOLS</h1>
+        <p>We store a collection of photos from over 1000 Rosenwald schools in over 10 different states. Explore the school facilities or browse by ones you know.</p>
+
+        <div id="map-container">
+            <div id="map"></div>
+        </div>
+
+        <div class="map-help" id="show-help">
+            <i>?</i> How do I use this map?
+        </div>
+        
+        <!-- Help Modal -->
+        <div id="help-modal" class="modal">
+            <div class="modal-content">
+                <span class="close-button" id="close-help-modal">&times;</span>
+                <div class="modal-header">
+                    <h2>How to Use This Map</h2>
+                </div>
+                <div class="modal-body">
+                    <p>This interactive map shows the locations of Rosenwald schools across the southern United States.</p>
+                    <ul>
+                        <li>Click on the colored circles to zoom in and see individual schools</li>
+                        <li>The number in each circle represents how many schools are in that area</li>
+                        <li>Different colors represent different densities of schools</li>
+                        <li>Click on an individual school marker to view details and photos</li>
+                        <li>Use the + and - buttons to zoom in and out</li>
+                        <li>Click and drag to move around the map</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.min.js"></script>
+    <script>
+        // Initialize the map
+        const map = L.map('map').setView([32.5, -86], 5); // Centered on the southeastern US
+
+        // Add the base map layer (OpenStreetMap)
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors',
+            maxZoom: 18
+        }).addTo(map);
+
+        // Sample data for Rosenwald schools
+        const schools = [
+            // Tennessee Schools (30+ schools)
+            { id: 1, name: "Bethel School", location: "Rutherford County, Tennessee", lat: 35.84, lng: -86.39, image: "assets/image/sample-school.png" },
+            { id: 2, name: "Liberty School", location: "Davidson County, Tennessee", lat: 36.17, lng: -86.78, image: "assets/image/sample-school.png" },
+            { id: 3, name: "Oak Grove School", location: "Shelby County, Tennessee", lat: 35.15, lng: -89.85, image: "assets/image/sample-school.png" },
+            { id: 4, name: "Pleasant View School", location: "Hamilton County, Tennessee", lat: 35.04, lng: -85.31, image: "assets/image/sample-school.png" },
+            { id: 5, name: "Dunbar School", location: "Knox County, Tennessee", lat: 35.96, lng: -83.92, image: "assets/image/sample-school.png" },
+            { id: 6, name: "Washington School", location: "Madison County, Tennessee", lat: 35.61, lng: -88.81, image: "assets/image/sample-school.png" },
+            { id: 7, name: "Lincoln School", location: "Montgomery County, Tennessee", lat: 36.53, lng: -87.35, image: "assets/image/sample-school.png" },
+            { id: 8, name: "Central School", location: "Maury County, Tennessee", lat: 35.61, lng: -87.04, image: "assets/image/sample-school.png" },
+            { id: 9, name: "Carver School", location: "Sumner County, Tennessee", lat: 36.37, lng: -86.45, image: "assets/image/sample-school.png" },
+            { id: 10, name: "Hope School", location: "Wilson County, Tennessee", lat: 36.21, lng: -86.29, image: "assets/image/sample-school.png" },
+            { id: 11, name: "Burt High School", location: "Robertson County, Tennessee", lat: 36.52, lng: -86.87, image: "assets/image/sample-school.png" },
+            { id: 12, name: "Hopewell School", location: "Bedford County, Tennessee", lat: 35.47, lng: -86.46, image: "assets/image/sample-school.png" },
+            { id: 13, name: "Unity School", location: "Tipton County, Tennessee", lat: 35.52, lng: -89.76, image: "assets/image/sample-school.png" },
+            { id: 14, name: "Swift Memorial School", location: "Dyer County, Tennessee", lat: 36.03, lng: -89.39, image: "assets/image/sample-school.png" },
+            { id: 15, name: "Bell Town School", location: "Williamson County, Tennessee", lat: 35.89, lng: -86.89, image: "assets/image/sample-school.png" },
+            { id: 16, name: "Henning School", location: "Lauderdale County, Tennessee", lat: 35.67, lng: -89.59, image: "assets/image/sample-school.png" },
+            { id: 17, name: "Mt. Zion School", location: "Marshall County, Tennessee", lat: 35.31, lng: -86.76, image: "assets/image/sample-school.png" },
+            { id: 18, name: "Loudon County School", location: "Loudon County, Tennessee", lat: 35.73, lng: -84.31, image: "assets/image/sample-school.png" },
+            { id: 19, name: "Langston School", location: "Blount County, Tennessee", lat: 35.79, lng: -83.97, image: "assets/image/sample-school.png" },
+            { id: 20, name: "Franklin County School", location: "Franklin County, Tennessee", lat: 35.15, lng: -86.09, image: "assets/image/sample-school.png" },
+            { id: 21, name: "Fisk University School", location: "Davidson County, Tennessee", lat: 36.16, lng: -86.80, image: "assets/image/sample-school.png" },
+            { id: 22, name: "Watertown School", location: "Wilson County, Tennessee", lat: 36.10, lng: -86.13, image: "assets/image/sample-school.png" },
+            { id: 23, name: "Greenwood School", location: "Giles County, Tennessee", lat: 35.13, lng: -87.03, image: "assets/image/sample-school.png" },
+            { id: 24, name: "Pleasant Hill School", location: "Cumberland County, Tennessee", lat: 35.98, lng: -84.99, image: "assets/image/sample-school.png" },
+            { id: 25, name: "Mt. Pleasant School", location: "Maury County, Tennessee", lat: 35.55, lng: -87.20, image: "assets/image/sample-school.png" },
+            { id: 26, name: "Trenton School", location: "Gibson County, Tennessee", lat: 35.98, lng: -88.94, image: "assets/image/sample-school.png" },
+            { id: 27, name: "Milan School", location: "Gibson County, Tennessee", lat: 35.92, lng: -88.76, image: "assets/image/sample-school.png" },
+            { id: 28, name: "Fayette County School", location: "Fayette County, Tennessee", lat: 35.19, lng: -89.41, image: "assets/image/sample-school.png" },
+            { id: 29, name: "Paris School", location: "Henry County, Tennessee", lat: 36.30, lng: -88.32, image: "assets/image/sample-school.png" },
+            { id: 30, name: "Union City School", location: "Obion County, Tennessee", lat: 36.42, lng: -89.05, image: "assets/image/sample-school.png" },
+            
+            // Georgia Schools (30+ schools)
+            { id: 31, name: "Booker T. Washington School", location: "Fulton County, Georgia", lat: 33.75, lng: -84.39, image: "assets/image/sample-school.png" },
+            { id: 32, name: "Oak Grove School", location: "Lowndes County, Georgia", lat: 30.83, lng: -83.24, image: "assets/image/sample-school.png" },
+            { id: 33, name: "St. James School", location: "Bibb County, Georgia", lat: 32.84, lng: -83.63, image: "assets/image/sample-school.png" },
+            { id: 34, name: "Eastman School", location: "Dodge County, Georgia", lat: 32.19, lng: -83.18, image: "assets/image/sample-school.png" },
+            { id: 35, name: "Dunbar School", location: "DeKalb County, Georgia", lat: 33.77, lng: -84.23, image: "assets/image/sample-school.png" },
+            { id: 36, name: "Albany School", location: "Dougherty County, Georgia", lat: 31.58, lng: -84.17, image: "assets/image/sample-school.png" },
+            { id: 37, name: "Dublin School", location: "Laurens County, Georgia", lat: 32.54, lng: -82.90, image: "assets/image/sample-school.png" },
+            { id: 38, name: "Savannah School", location: "Chatham County, Georgia", lat: 32.08, lng: -81.09, image: "assets/image/sample-school.png" },
+            { id: 39, name: "Thomasville School", location: "Thomas County, Georgia", lat: 30.84, lng: -83.98, image: "assets/image/sample-school.png" },
+            { id: 40, name: "Athens School", location: "Clarke County, Georgia", lat: 33.96, lng: -83.38, image: "assets/image/sample-school.png" },
+            { id: 41, name: "Augusta School", location: "Richmond County, Georgia", lat: 33.47, lng: -81.97, image: "assets/image/sample-school.png" },
+            { id: 42, name: "Newnan School", location: "Coweta County, Georgia", lat: 33.38, lng: -84.80, image: "assets/image/sample-school.png" },
+            { id: 43, name: "Griffin School", location: "Spalding County, Georgia", lat: 33.24, lng: -84.26, image: "assets/image/sample-school.png" },
+            { id: 44, name: "Sparta School", location: "Hancock County, Georgia", lat: 33.27, lng: -82.97, image: "assets/image/sample-school.png" },
+            { id: 45, name: "Rome School", location: "Floyd County, Georgia", lat: 34.26, lng: -85.16, image: "assets/image/sample-school.png" },
+            { id: 46, name: "Brunswick School", location: "Glynn County, Georgia", lat: 31.15, lng: -81.49, image: "assets/image/sample-school.png" },
+            { id: 47, name: "Waycross School", location: "Ware County, Georgia", lat: 31.21, lng: -82.35, image: "assets/image/sample-school.png" },
+            { id: 48, name: "Cedartown School", location: "Polk County, Georgia", lat: 34.01, lng: -85.26, image: "assets/image/sample-school.png" },
+            { id: 49, name: "Cartersville School", location: "Bartow County, Georgia", lat: 34.16, lng: -84.80, image: "assets/image/sample-school.png" },
+            { id: 50, name: "LaGrange School", location: "Troup County, Georgia", lat: 33.04, lng: -85.03, image: "assets/image/sample-school.png" },
+            { id: 51, name: "Milledgeville School", location: "Baldwin County, Georgia", lat: 33.08, lng: -83.23, image: "assets/image/sample-school.png" },
+            { id: 52, name: "Americus School", location: "Sumter County, Georgia", lat: 32.07, lng: -84.23, image: "assets/image/sample-school.png" },
+            { id: 53, name: "Cordele School", location: "Crisp County, Georgia", lat: 31.96, lng: -83.78, image: "assets/image/sample-school.png" },
+            { id: 54, name: "Washington County School", location: "Washington County, Georgia", lat: 32.97, lng: -82.80, image: "assets/image/sample-school.png" },
+            { id: 55, name: "Emanuel County School", location: "Emanuel County, Georgia", lat: 32.59, lng: -82.31, image: "assets/image/sample-school.png" },
+            { id: 56, name: "Union Point School", location: "Greene County, Georgia", lat: 33.61, lng: -83.07, image: "assets/image/sample-school.png" },
+            { id: 57, name: "Putnam County School", location: "Putnam County, Georgia", lat: 33.33, lng: -83.37, image: "assets/image/sample-school.png" },
+            { id: 58, name: "Tifton School", location: "Tift County, Georgia", lat: 31.45, lng: -83.51, image: "assets/image/sample-school.png" },
+            { id: 59, name: "Monroe County School", location: "Monroe County, Georgia", lat: 33.01, lng: -83.92, image: "assets/image/sample-school.png" },
+            { id: 60, name: "Valdosta School", location: "Lowndes County, Georgia", lat: 30.83, lng: -83.28, image: "assets/image/sample-school.png" },
+            
+            // Alabama Schools (25+ schools)
+            { id: 61, name: "Mt. Olive School", location: "Jefferson County, Alabama", lat: 33.52, lng: -86.80, image: "assets/image/sample-school.png" },
+            { id: 62, name: "Birmingham School", location: "Jefferson County, Alabama", lat: 33.54, lng: -86.82, image: "assets/image/sample-school.png" },
+            { id: 63, name: "Montgomery School", location: "Montgomery County, Alabama", lat: 32.36, lng: -86.30, image: "assets/image/sample-school.png" },
+            { id: 64, name: "Mobile School", location: "Mobile County, Alabama", lat: 30.69, lng: -88.04, image: "assets/image/sample-school.png" },
+            { id: 65, name: "Tuscaloosa School", location: "Tuscaloosa County, Alabama", lat: 33.21, lng: -87.57, image: "assets/image/sample-school.png" },
+            { id: 66, name: "Selma School", location: "Dallas County, Alabama", lat: 32.40, lng: -87.02, image: "assets/image/sample-school.png" },
+            { id: 67, name: "Huntsville School", location: "Madison County, Alabama", lat: 34.73, lng: -86.59, image: "assets/image/sample-school.png" },
+            { id: 68, name: "Tuskegee School", location: "Macon County, Alabama", lat: 32.43, lng: -85.69, image: "assets/image/sample-school.png" },
+            { id: 69, name: "Dothan School", location: "Houston County, Alabama", lat: 31.22, lng: -85.39, image: "assets/image/sample-school.png" },
+            { id: 70, name: "Anniston School", location: "Calhoun County, Alabama", lat: 33.66, lng: -85.83, image: "assets/image/sample-school.png" },
+            { id: 71, name: "Gadsden School", location: "Etowah County, Alabama", lat: 34.01, lng: -86.01, image: "assets/image/sample-school.png" },
+            { id: 72, name: "Decatur School", location: "Morgan County, Alabama", lat: 34.61, lng: -86.98, image: "assets/image/sample-school.png" },
+            { id: 73, name: "Talladega School", location: "Talladega County, Alabama", lat: 33.44, lng: -86.10, image: "assets/image/sample-school.png" },
+            { id: 74, name: "Athens School", location: "Limestone County, Alabama", lat: 34.80, lng: -86.97, image: "assets/image/sample-school.png" },
+            { id: 75, name: "Phenix City School", location: "Russell County, Alabama", lat: 32.47, lng: -85.00, image: "assets/image/sample-school.png" },
+            { id: 76, name: "Opelika School", location: "Lee County, Alabama", lat: 32.65, lng: -85.38, image: "assets/image/sample-school.png" },
+            { id: 77, name: "Bessemer School", location: "Jefferson County, Alabama", lat: 33.40, lng: -86.95, image: "assets/image/sample-school.png" },
+            { id: 78, name: "Enterprise School", location: "Coffee County, Alabama", lat: 31.31, lng: -85.85, image: "assets/image/sample-school.png" },
+            { id: 79, name: "Prattville School", location: "Autauga County, Alabama", lat: 32.46, lng: -86.46, image: "assets/image/sample-school.png" },
+            { id: 80, name: "Eufaula School", location: "Barbour County, Alabama", lat: 31.89, lng: -85.15, image: "assets/image/sample-school.png" },
+            { id: 81, name: "Greenville School", location: "Butler County, Alabama", lat: 31.83, lng: -86.62, image: "assets/image/sample-school.png" },
+            { id: 82, name: "Demopolis School", location: "Marengo County, Alabama", lat: 32.51, lng: -87.84, image: "assets/image/sample-school.png" },
+            { id: 83, name: "Union Springs School", location: "Bullock County, Alabama", lat: 32.14, lng: -85.71, image: "assets/image/sample-school.png" },
+            { id: 84, name: "Greensboro School", location: "Hale County, Alabama", lat: 32.70, lng: -87.60, image: "assets/image/sample-school.png" },
+            { id: 85, name: "Marion School", location: "Perry County, Alabama", lat: 32.63, lng: -87.32, image: "assets/image/sample-school.png" },
+            
+            // North Carolina Schools (15+ schools)
+            { id: 86, name: "Piney Grove School", location: "Wake County, North Carolina", lat: 35.78, lng: -78.64, image: "assets/image/sample-school.png" },
+            { id: 87, name: "Durham School", location: "Durham County, North Carolina", lat: 36.00, lng: -78.90, image: "assets/image/sample-school.png" },
+            { id: 88, name: "Charlotte School", location: "Mecklenburg County, North Carolina", lat: 35.23, lng: -80.84, image: "assets/image/sample-school.png" },
+            { id: 89, name: "Greensboro School", location: "Guilford County, North Carolina", lat: 36.07, lng: -79.79, image: "assets/image/sample-school.png" },
+            { id: 90, name: "Winston-Salem School", location: "Forsyth County, North Carolina", lat: 36.10, lng: -80.26, image: "assets/image/sample-school.png" },
+            { id: 91, name: "Fayetteville School", location: "Cumberland County, North Carolina", lat: 35.05, lng: -78.87, image: "assets/image/sample-school.png" },
+            { id: 92, name: "Wilmington School", location: "New Hanover County, North Carolina", lat: 34.23, lng: -77.94, image: "assets/image/sample-school.png" },
+            { id: 93, name: "Asheville School", location: "Buncombe County, North Carolina", lat: 35.60, lng: -82.55, image: "assets/image/sample-school.png" },
+            { id: 94, name: "Greenville School", location: "Pitt County, North Carolina", lat: 35.61, lng: -77.37, image: "assets/image/sample-school.png" },
+            { id: 95, name: "High Point School", location: "Guilford County, North Carolina", lat: 35.96, lng: -80.00, image: "assets/image/sample-school.png" },
+            { id: 96, name: "Elizabeth City School", location: "Pasquotank County, North Carolina", lat: 36.30, lng: -76.22, image: "assets/image/sample-school.png" },
+            { id: 97, name: "Rocky Mount School", location: "Nash County, North Carolina", lat: 35.94, lng: -77.80, image: "assets/image/sample-school.png" },
+            { id: 98, name: "Salisbury School", location: "Rowan County, North Carolina", lat: 35.67, lng: -80.47, image: "assets/image/sample-school.png" },
+            { id: 99, name: "Goldsboro School", location: "Wayne County, North Carolina", lat: 35.38, lng: -77.99, image: "assets/image/sample-school.png" },
+            { id: 100, name: "Shelby School", location: "Cleveland County, North Carolina", lat: 35.29, lng: -81.54, image: "assets/image/sample-school.png" },
+            
+            // Additional schools from various states
+            { id: 101, name: "Liberty School", location: "Escambia County, Florida", lat: 30.42, lng: -87.21, image: "assets/image/sample-school.png" },
+            { id: 102, name: "Pleasant Hill School", location: "Harris County, Texas", lat: 29.77, lng: -95.38, image: "assets/image/sample-school.png" },
+            { id: 103, name: "Friendship School", location: "Bernalillo County, New Mexico", lat: 35.08, lng: -106.65, image: "assets/image/sample-school.png" },
+            { id: 104, name: "Jackson School", location: "Hinds County, Mississippi", lat: 32.30, lng: -90.18, image: "assets/image/sample-school.png" },
+            { id: 105, name: "Louisville School", location: "Jefferson County, Kentucky", lat: 38.25, lng: -85.76, image: "assets/image/sample-school.png" },
+            { id: 106, name: "Richmond School", location: "Madison County, Kentucky", lat: 37.75, lng: -84.29, image: "assets/image/sample-school.png" },
+            { id: 107, name: "Little Rock School", location: "Pulaski County, Arkansas", lat: 34.75, lng: -92.29, image: "assets/image/sample-school.png" },
+            { id: 108, name: "Columbia School", location: "Richland County, South Carolina", lat: 34.00, lng: -81.03, image: "assets/image/sample-school.png" },
+            { id: 109, name: "Charleston School", location: "Charleston County, South Carolina", lat: 32.78, lng: -79.93, image: "assets/image/sample-school.png" },
+            { id: 110, name: "Norfolk School", location: "Norfolk County, Virginia", lat: 36.85, lng: -76.29, image: "assets/image/sample-school.png" }
+        ];
+
+        // Create a marker cluster group
+        const markers = L.markerClusterGroup({
+            iconCreateFunction: function(cluster) {
+                const count = cluster.getChildCount();
+                let className = 'marker-cluster-small';
+                
+                if (count > 50) {
+                    className = 'marker-cluster-large';
+                } else if (count > 20) {
+                    className = 'marker-cluster-medium';
+                }
+                
+                return L.divIcon({ 
+                    html: '<div><span>' + count + '</span></div>', 
+                    className: 'marker-cluster ' + className,
+                    iconSize: L.point(40, 40)
+                });
+            }
+        });
+
+        // Add markers for each school
+        schools.forEach(school => {
+            const marker = L.marker([school.lat, school.lng]);
+
+            marker.on('click', function() {
+                let schoolPopContent = `
+                    <div id="popup-container">
+                        <div class="popup-content">
+                            <div class="popup-header">
+                                <h2 id="popup-school-name">${school.name}</h2>
+                                <p id="popup-school-location">${school.location}</p>
+                            </div>
+                            <div class="popup-body">
+                                <a href="#" class="view-school" id=#">View School</a>
+                                <img id="popup-school-image" class="popup-school-image" src="${school.image}" alt="${school.name}">
+                            </div>
+                        </div>
+                    </div>`
+
+                let popup = L.popup()
+                    .setLatLng([school.lat, school.lng])
+                    .setContent(schoolPopContent)
+                    .openOn(map);
+            })
+
+            markers.addLayer(marker);
+        });
+
+        // Add the marker cluster group to the map
+        map.addLayer(markers);
+
+        // Modal functionality
+        // School modal
+        const schoolModal = document.getElementById('school-modal');
+        const closeSchoolModal = document.getElementById('close-school-modal');
+        closeSchoolModal.onclick = function() {
+            schoolModal.style.display = "none";
+        }
+
+        // Help modal
+        const helpModal = document.getElementById('help-modal');
+        const showHelp = document.getElementById('show-help');
+        const closeHelpModal = document.getElementById('close-help-modal');
+
+        showHelp.onclick = function() {
+            helpModal.style.display = "block";
+        }
+
+        closeHelpModal.onclick = function() {
+            helpModal.style.display = "none";
+        }
+
+        // Close modals when clicking outside
+        window.onclick = function(event) {
+            if (event.target == schoolModal) {
+                schoolModal.style.display = "none";
+            }
+            if (event.target == helpModal) {
+                helpModal.style.display = "none";
+            }
+        }
+
+    </script>
+</body>
+</html>
